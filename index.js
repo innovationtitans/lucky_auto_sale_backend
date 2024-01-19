@@ -1,5 +1,5 @@
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const cors = require("cors");
 var jwt = require("jsonwebtoken");
@@ -38,11 +38,27 @@ async function run() {
     ***************************All Gets Methods are here*********************/
 
     app.get("/cars", async (req, res)=>{
-        console.log("hitting")
-        const result = await carCollection.find().toArray();
+        const result = await carCollection.find().sort({date: -1}).toArray();
         res.send(result);
 
     })
+
+    app.get("/carDetail/:id", async (req, res) => {
+        const id = req.params.id;
+        const query = {_id: new ObjectId(id)};
+        const result = await carCollection.find(query).toArray();
+        res.send(result);
+      });
+
+
+      //Getting indiviual car detail for update
+
+      app.get("/updateCar/:id", async (req, res) => {
+        const id = req.params.id;
+        const query = {_id: new ObjectId(id)};
+        const result = await carCollection.find(query).toArray();
+        res.send(result);
+      });
 
     
 
@@ -57,6 +73,19 @@ async function run() {
     })
 
 
+
+
+
+    /****************Deleting Car**********************/
+
+
+    app.delete("/deleteCar/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await carCollection.deleteOne(query);
+      console.log(result);
+      res.send(result);
+    });
 
 
 
