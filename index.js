@@ -31,6 +31,7 @@ async function run() {
     // Send a ping to confirm a successful connection
 
     const carCollection = client.db("LUCKYAUTOSALES_DB").collection("CARS_COLLECTION");
+    const bannerCollection = client.db("LUCKYAUTOSALES_DB").collection("BANNER_COLLECTION");
 
 
 
@@ -59,6 +60,109 @@ async function run() {
         const result = await carCollection.find(query).toArray();
         res.send(result);
       });
+
+
+      //Get Banner First;
+
+      app.get("/banner", async(req, res)=>{
+        const result = await bannerCollection.find().sort({date: -1}).toArray();
+        console.log(result);
+        res.send(result);
+      })
+
+
+      //Post new banner
+      app.post('/banner', async(req, res)=>{
+        const body = req.body;
+        const result = await bannerCollection.insertOne(body);
+        
+        res.send(result);
+
+      })
+
+      //delete banner before adding new
+      app.delete('/banner', async(req, res)=>{
+        const result = await bannerCollection.deleteMany();
+        res.send(result);
+      })
+
+
+      //Update sold car
+
+      app.patch('/sold/:id', async(req, res)=>{
+        const id = req.params.id;
+        const query = {_id: new ObjectId(id)}
+        const updateDoc = {
+          $set:{
+            sold: true
+          }
+        }
+        const option = {upsert: true}
+        const result = await carCollection.updateOne(query, updateDoc, option)
+        res.send(result)
+      })
+      
+
+
+      //Updating Car
+      app.patch("/updateCar/:id", async(req, res)=>{
+        const id = req.params.id;
+        const body = req.body;
+        const query = {_id: new ObjectId(id)}
+        const updateDoc = {
+          $set:{
+
+            year: body.year,
+            make: body.make,
+            model: body.model,
+            drivertrain: body.drivertrain,
+            vechileType: body.vechileType,
+            transmission: body.transmission,
+            condition: body.condition,
+            fuel: body.fuel,
+            engine: body.engine,
+            vin: body.vin,
+            HWYFuel: body.HWYFuel,
+            price: body.price,
+            date: body.date,
+            Image_cover: body.Image_cover,
+            allImages: body.allImages,
+            description: body.description,
+            milage: body.milage
+
+          }
+        }
+
+        const result = await carCollection.updateOne(query, updateDoc);
+        console.log(result)
+        res.send(result)
+      })
+
+
+
+      /****************************Pagination API*********************************/
+
+      app.get("/carCount", async(req, res)=>{
+        const count = await carCollection.estimatedDocumentCount();
+        res.send({count});
+      })
+
+
+      app.get('/products', async (req, res) => {
+        const page = parseInt(req.query.page);
+        const size = parseInt(req.query.size);
+        console.log('pagination query', page, size);
+        const result = await carCollection.find()
+        .skip(page * size)
+        .limit(size)
+        .sort({date: -1})
+        .toArray();
+        res.send(result);
+      })
+
+
+
+      /**********************Pagination Ends Here */
 
     
 
