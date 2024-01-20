@@ -35,6 +35,35 @@ async function run() {
 
 
 
+
+        /*************************************Authentication API*******************/
+
+    //Token Send
+    app.post("/jwt", (req, res) =>{
+      const user = req.body;
+      const result = jwt.sign(user, process.env.Access_token, {expiresIn: "1hr"})
+      res.send({result});
+    })
+
+
+    //Verify token middlewear
+    const verifyToken = (req, res, next) =>{
+      if(!req.headers.authorization){
+        return res.status(401).send({message: "Unauthorized Access"})
+      }
+      const token = req.headers.authorization.split(" ")[1];
+      jwt.verify(token, process.env.Access_token, (err, decoded)=>{
+        if(err){
+          return res.status(401).send({message: "Unauthorized Access"})
+        }
+        req.decoded = decoded;
+        next();
+      })
+    }
+
+
+
+
     /*************************************************************************
     ***************************All Gets Methods are here*********************/
 
@@ -64,15 +93,15 @@ async function run() {
 
       //Get Banner First;
 
-      app.get("/banner", async(req, res)=>{
+      app.get("/banner",  async(req, res)=>{
         const result = await bannerCollection.find().sort({date: -1}).toArray();
-        console.log(result);
+        // console.log(result);
         res.send(result);
       })
 
 
       //Post new banner
-      app.post('/banner', async(req, res)=>{
+      app.post('/banner', verifyToken, async(req, res)=>{
         const body = req.body;
         const result = await bannerCollection.insertOne(body);
         
@@ -81,7 +110,7 @@ async function run() {
       })
 
       //delete banner before adding new
-      app.delete('/banner', async(req, res)=>{
+      app.delete('/banner', verifyToken, async(req, res)=>{
         const result = await bannerCollection.deleteMany();
         res.send(result);
       })
@@ -89,7 +118,7 @@ async function run() {
 
       //Update sold car
 
-      app.patch('/sold/:id', async(req, res)=>{
+      app.patch('/sold/:id', verifyToken, async(req, res)=>{
         const id = req.params.id;
         const query = {_id: new ObjectId(id)}
         const updateDoc = {
@@ -105,7 +134,7 @@ async function run() {
 
 
       //Updating Car
-      app.patch("/updateCar/:id", async(req, res)=>{
+      app.patch("/updateCar/:id", verifyToken, async(req, res)=>{
         const id = req.params.id;
         const body = req.body;
         const query = {_id: new ObjectId(id)}
@@ -134,24 +163,22 @@ async function run() {
         }
 
         const result = await carCollection.updateOne(query, updateDoc);
-        console.log(result)
+        // console.log(result)
         res.send(result)
       })
 
 
 
       /****************************Pagination API*********************************/
-
-      app.get("/carCount", async(req, res)=>{
+      app.get("/carCount",  async(req, res)=>{
         const count = await carCollection.estimatedDocumentCount();
         res.send({count});
       })
 
-
       app.get('/products', async (req, res) => {
         const page = parseInt(req.query.page);
         const size = parseInt(req.query.size);
-        console.log('pagination query', page, size);
+        // console.log('pagination query', page, size);
         const result = await carCollection.find()
         .skip(page * size)
         .limit(size)
@@ -160,51 +187,33 @@ async function run() {
         res.send(result);
       })
 
-
-
-      /**********************Pagination Ends Here */
-
-    
-
-
+      /**********************Pagination Ends Here ****************/
 
     //Post method for adding car to mongodb database;
 
-    app.post("/addCar", async (req, res)=>{
+    app.post("/addCar", verifyToken, async (req, res)=>{
         const body = req.body;
         const result = await carCollection.insertOne(body);
         res.send(result);
     })
 
-
-
-
-
     /****************Deleting Car**********************/
-
-
-    app.delete("/deleteCar/:id", async (req, res) => {
+    app.delete("/deleteCar/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = {_id: new ObjectId(id)};
       const result = await carCollection.deleteOne(query);
-      console.log(result);
+      // console.log(result);
       res.send(result);
     });
 
-
-
-
-
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
   }
 }
 run().catch(console.dir);
-
-
 
 
 
